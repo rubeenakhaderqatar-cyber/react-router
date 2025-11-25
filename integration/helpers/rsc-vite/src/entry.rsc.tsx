@@ -13,7 +13,7 @@ import { routes } from "./routes";
 import { requestContext } from "./config/request-context";
 
 export async function fetchServer(request: Request) {
-  return await matchRSCServerRequest({
+  const serverResponse = await matchRSCServerRequest({
     createTemporaryReferenceSet,
     decodeReply,
     decodeAction,
@@ -30,6 +30,7 @@ export async function fetchServer(request: Request) {
       });
     },
   });
+  return new Response(serverResponse.body, serverResponse);
 }
 
 export default async function handler(request: Request) {

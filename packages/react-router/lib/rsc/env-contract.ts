@@ -1,15 +1,15 @@
 export type RequestContract =
   | {
-      body?: BodyInit | null;
-      headers?: HeadersInit;
-      method?: string;
+      body: BodyInit | null;
+      headers: HeadersInit;
+      method: string;
       url: string;
     }
   | Request;
 
 export type ResponseContract = {
   body: ReadableStream<Uint8Array> | null;
-  headers: [string, string][];
+  headers: HeadersInit;
   status: number;
   statusText: string;
 };

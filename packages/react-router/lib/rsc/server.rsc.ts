@@ -680,7 +680,7 @@ async function generateResourceResponse(
   routeId: string,
   requestContext: RouterContextProvider | undefined,
   onError: ((error: unknown) => void) | undefined,
-) {
+): Promise<Response> {
   try {
     const staticHandler = createStaticHandler(routes, {
       basename,

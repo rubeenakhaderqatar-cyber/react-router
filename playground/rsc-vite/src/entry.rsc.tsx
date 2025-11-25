@@ -11,7 +11,7 @@ import { unstable_matchRSCServerRequest as matchRSCServerRequest } from "react-r
 import { routes } from "./routes";
 
 export async function fetchServer(request: Request) {
-  return await matchRSCServerRequest({
+  const serverResponse = await matchRSCServerRequest({
     createTemporaryReferenceSet,
     decodeAction,
     decodeFormState,
@@ -27,6 +27,7 @@ export async function fetchServer(request: Request) {
       });
     },
   });
+  return new Response(serverResponse.body, serverResponse);
 }
 
 export default async function handler(request: Request) {

@@ -19,8 +19,8 @@ import { assets } from "./parcel-entry-wrapper";
 import { basename } from "./config/basename";
 import { requestContext } from "./config/request-context";
 
-function fetchServer(request: Request) {
-  return matchRSCServerRequest({
+async function fetchServer(request: Request) {
+  const serverResponse = await matchRSCServerRequest({
     // Provide the React Server touchpoints.
     createTemporaryReferenceSet,
     decodeReply,
@@ -41,6 +41,7 @@ function fetchServer(request: Request) {
       });
     },
   });
+  return new Response(serverResponse.body, serverResponse);
 }
 
 const app = express();
