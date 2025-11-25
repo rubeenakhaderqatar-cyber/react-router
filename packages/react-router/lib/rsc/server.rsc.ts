@@ -60,6 +60,8 @@ import type {
   ErrorBoundaryProps,
   HydrateFallbackProps,
 } from "../components";
+import type { RequestContract, ResponseContract } from "./env-contract";
+
 const Outlet: typeof OutletType = UNTYPED_Outlet;
 const WithComponentProps: typeof WithComponentPropsType =
   UNSAFE_WithComponentProps;
@@ -374,7 +376,7 @@ export async function matchRSCServerRequest({
   requestContext?: RouterContextProvider;
   loadServerAction?: LoadServerActionFunction;
   onError?: (error: unknown) => void;
-  request: Request;
+  request: RequestContract;
   routes: RSCRouteConfigEntry[];
   generateResponse: (
     match: RSCMatch,
@@ -384,7 +386,7 @@ export async function matchRSCServerRequest({
       temporaryReferences: unknown;
     },
   ) => Response;
-}): Promise<Response> {
+}): Promise<ResponseContract> {
   let requestUrl = new URL(request.url);
 
   const temporaryReferences = createTemporaryReferenceSet();
@@ -397,20 +399,32 @@ export async function matchRSCServerRequest({
       generateResponse,
       temporaryReferences,
     );
-    return response;
+    return {
+      body: response.body,
+      headers: Array.from(response.headers),
+      status: response.status,
+      statusText: response.statusText,
+    };
   }
 
   let isDataRequest = isReactServerRequest(requestUrl);
 
   const url = new URL(request.url);
-  let routerRequest = request;
+  let routerRequest = new Request(request.url, {
+    body: request.body,
+    duplex: request.body ? "half" : undefined,
+    headers: request.headers,
+    method: request.method,
+    signal: "signal" in request ? request.signal : null,
+  } as RequestInit & { duplex?: "half" });
+
   if (isDataRequest) {
     url.pathname = url.pathname.replace(/(_root)?\.rsc$/, "");
     routerRequest = new Request(url.toString(), {
       method: request.method,
       headers: request.headers,
       body: request.body,
-      signal: request.signal,
+      signal: "signal" in request ? request.signal : undefined,
       duplex: request.body ? "half" : undefined,
     } as RequestInit);
   }
@@ -431,7 +445,7 @@ export async function matchRSCServerRequest({
     !leafMatch.route.Component &&
     !leafMatch.route.ErrorBoundary
   ) {
-    return generateResourceResponse(
+    const response = await generateResourceResponse(
       routerRequest,
       routes,
       basename,
@@ -439,6 +453,12 @@ export async function matchRSCServerRequest({
       requestContext,
       onError,
     );
+    return {
+      body: response.body,
+      headers: Array.from(response.headers),
+      status: response.status,
+      statusText: response.statusText,
+    };
   }
 
   let response = await generateRenderResponse(
@@ -458,13 +478,18 @@ export async function matchRSCServerRequest({
   // The front end uses this to know whether a 4xx/5xx status came from app code
   // or never reached the origin server
   response.headers.set("X-Remix-Response", "yes");
-  return response;
+  return {
+    body: response.body,
+    headers: Array.from(response.headers),
+    status: response.status,
+    statusText: response.statusText,
+  };
 }
 
 async function generateManifestResponse(
   routes: RSCRouteConfigEntry[],
   basename: string | undefined,
-  request: Request,
+  request: RequestContract,
   generateResponse: (
     match: RSCMatch,
     { temporaryReferences }: { temporaryReferences: unknown },
